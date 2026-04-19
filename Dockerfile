@@ -13,5 +13,5 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 USER 1001
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:8080/ || exit 1
+  CMD curl -f http://localhost:8080/api/v1/movies || exit 1
 CMD ["java", "-jar", "app.jar"]
