@@ -1,0 +1,42 @@
+# Exclude build artifacts
+target/
+*.jar
+*.war
+*.ear
+
+# Exclude IDE files
+.idea/
+.vscode/
+*.iml
+*.iws
+
+# Exclude version control
+.git/
+.gitignore
+
+# Exclude logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# Exclude OS files
+.DS_Store
+Thumbs.db
+
+# Exclude test files if not needed in container
+src/test/
+
+# Exclude Maven wrapper if using system Maven
+# mvnw
+# mvnw.cmd
+# .mvn/
+
+# Exclude data files if not needed
+_data/
+
+# Exclude documentation
+README.md
+
+# Exclude environment files (use container env vars instead)
+.env
+*.env

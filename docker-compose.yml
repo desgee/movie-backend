@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: movieist-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: movieist
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - movieist-network
+
+  app:
+    build: .
+    container_name: movieist-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      MONGO_DATABASE: movieist
+      MONGO_CLUSTER: mongo:27017
+    depends_on:
+      - mongo
+    networks:
+      - movieist-network
+
+volumes:
+  mongo_data:
+
+networks:
+  movieist-network:
+    driver: bridge
