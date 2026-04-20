@@ -1,3 +1,0 @@
-job1:
-    script:
-        - echo "This is a first sample job now"
