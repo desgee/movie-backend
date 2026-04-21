@@ -1,0 +1,61 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  IMAGE_TAG: ${{ github.sha }}
+  ECR_URI: ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_URI: ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+        run: |
+          ssh -o StrictHostKeyChecking=yes "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" << EOF
+            set -e
+            if ! command -v aws >/dev/null 2>&1; then
+              if command -v yum >/dev/null 2>&1; then
+                sudo yum install -y aws-cli
+              elif command -v apt-get >/dev/null 2>&1; then
+                sudo apt-get update
+                sudo apt-get install -y awscli
+              fi
+            fi
+            if ! command -v docker >/dev/null 2>&1; then
+              echo "Docker must be installed on the EC2 instance."
+              exit 1
+            fi
+            export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
+            export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}"
+            export AWS_DEFAULT_REGION="${AWS_REGION}"
+            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+            docker pull ${ECR_URI}:${IMAGE_TAG}
+            docker pull ${ECR_URI}:latest
+            docker stop movieist-app || true
+            docker rm movieist-app || true
+            docker run -d --name movieist-app --restart unless-stopped -p 8080:8080 -e MONGO_URI="${MONGO_URI}" ${ECR_URI}:${IMAGE_TAG}
+          EOF
+
