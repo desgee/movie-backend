@@ -1,7 +1,5 @@
 # 🎬 Netflix Backend
 
-**By DigitalWitch | Cloud • DevOps • Security**
-
 ---
 
 ## 📌 Overview
